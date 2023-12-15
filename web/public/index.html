@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lesson-64</title>
+    <link rel="stylesheet" href="../src/assets/bundle.css" />
+  </head>
+  <body class="flex flex-col items-center gap-2 relative">
+    <h1 class="font-sans text-center text-4xl mt-2">Todos</h1>
+
+    <div class="flex justify-end w-[400px] gap-1">
+      <button class="p-1 px-2 border rounded text-cyan border-cyan hover:bg-cyan-400 hover:text-white" id="clear-btn">Clear All</button>
+      <button class="p-1 px-2 border rounded text-cyan border-cyan hover:bg-sky-400 hover:text-white" id="add-btn">Add</button>
+    </div>
+
+    <ul class="flex flex-col gap-3 p-0 m-0 w-[400px]" id="todos">
+      <!-- <li class="h-[60px] p-2 bg-cyan-200 flex justify-between items-center">
+        <p class="text-black text-lg flex items-center">Todo-1</p>
+        <div class="flex gap-1">
+          <button class="bg-sky-600 px-2 py-1 rounded border text-white border-white">Edit</button>
+          <button class="bg-red-600 px-2 py-1 rounded border text-white border-white">Delete</button>
+        </div>
+      </li> -->
+    </ul>
+
+    <div class="absolute grid place-items-center h-[100vh] w-[100%] bg-black bg-opacity-25 backdrop-blur-sm" id="modal">
+      <button class="absolute top-[20px] right-[20px] text-xl hover:scale-90" id="close-btn">❌</button>
+      <form class="flex flex-col justify-center mt-2 w-[400px] gap-2" id="todo-form">
+        <h2 class="text-center text-gray-darker text-xl font-bold text-white">Create Todo</h2>
+        <input id="title" class="shadow-sm focus:outline-dashed appearance-none border rounded w-full p-3 text-grey-darker" placeholder="Title" />
+        <input id="description" class="shadow-sm focus:outline-dashed appearance-none border rounded w-full p-3 text-grey-darker" placeholder="Description" />
+        <input id="deadline" class="shadow-sm focus:outline-dashed appearance-none border rounded w-full p-3 text-grey-darker" type="number" placeholder="Deadline" />
+        <button class="p-3 border rounded text-cyan border-cyan hover:bg-cyan-400 hover:text-black">Submit</button>
+      </form>
+    </div>
+  </body>
+</html>
