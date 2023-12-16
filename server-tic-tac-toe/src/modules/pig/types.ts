@@ -6,6 +6,7 @@ export namespace IEntity {
       player2: Player;
       currentPlayer: string;
       winner: string;
+      max: number;
     }
 
     export interface Player {
@@ -15,7 +16,7 @@ export namespace IEntity {
       totalScore: number;
     }
 
-    export interface Mini extends Pick<Main, "id" | "winner"> {
+    export interface Mini extends Pick<Main, "id" | "winner" | "max"> {
       player1: string;
       player2: string;
     }

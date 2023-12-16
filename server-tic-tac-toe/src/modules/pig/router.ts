@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { faker } from "@faker-js/faker";
 
-import { games } from "./db";
+import { games, generateDice, generatePlayer } from "./db";
 import { IEntity } from "./types";
 import * as Mappers from "./mappers";
 
@@ -9,97 +9,74 @@ const router = Router();
 
 //  List
 router.get("/", (req, res) => {
-  const miniGames = games.map(Mappers.Mini);
+  const miniGames = Object.values(games).map(Mappers.Mini);
 
   res.send({ data: miniGames, message: null });
-}); // { data: [],  message: null }
+});
 
 // Single
 router.get("/:gameId", (req, res) => {
   const { gameId } = req.params;
 
-  const game = games.find((game) => game.id === gameId);
-
-  if (!game) return res.status(404).send({ data: null, message: `Game not found with id ${gameId}` });
+  const game = games[gameId];
+  if (!game) return res.status(404).send({ data: null, message: `Game not found with id: ${gameId} 🥺` });
 
   res.send({ data: game, message: null });
-}); // { data: {},  message: null }
+});
 
 router.post("/", (req, res) => {
-  const { player1, player2 } = req.body as Pick<IEntity.Game.Main, "player1" | "player2">;
+  const body = req.body as { player1: string; player2: string; max: number };
+  const player1 = generatePlayer(body.player1);
+  const player2 = generatePlayer(body.player2);
 
   const game: IEntity.Game.Main = {
     id: faker.string.uuid(),
-    player1: {
-      id: faker.string.uuid(),
-      name: player1.name,
-      currentScore: 0,
-      totalScore: 0
-    },
-    player2: {
-      id: faker.string.uuid(),
-      name: player2.name,
-      currentScore: 0,
-      totalScore: 0
-    },
-    currentPlayer: player1.id,
-    winner: null
+    max: body.max,
+    player1,
+    player2,
+    winner: null,
+    currentPlayer: player1.id
   };
-  game.currentPlayer = game.player1.id;
 
-  games.push(game);
-  const miniGames = games.map(Mappers.Mini);
+  games[game.id] = game;
 
-  res.send({ data: game, message: "Game successfully created 🎁" });
+  res.send({ data: game, message: "Game successfully created 🥳" });
 }); // { data: { id: "adsadsa", player1: "Kent", player2: "Mark" }, message: "Game successfully created 🎁" }
 
 router.post("/dice/:gameId", (req, res) => {
-  let mes = "";
-  const body = req.body as { playerId: string };
   const { gameId } = req.params;
-  const game = games.find((game) => game.id === gameId);
-  if (!game) return res.status(404).send({ data: null, message: `Game not found with id ${gameId}` });
-  let player = game.currentPlayer === game.player1.id ? game.player1 : game.player2;
-  const rollDice = Math.floor(Math.random() * (6 - 1) + 1);
-  
-  if (rollDice === 1) {
-    player = player.id === game.player1.id ? game.player2 : game.player1;
-    mes = "you got number 1 😕";
-  } else {
-    player.currentScore += rollDice;
-    mes = `number ${rollDice} has been added to you`;
-    if (player.totalScore >= 60) {
-      mes = "you won 🎉";
-    }
-  }
+  const game = games[gameId];
 
-  res.send({ data: player, message: mes });
-}); // { data: {1-6}, message: null }
+  if (!game) return res.status(404).send({ data: null, message: `Game not found with id: ${gameId} 🥺` });
 
-router.post("/hold/:gameId", (req, res) => {
-  let mes = "";
-  const body = req.body as { playerId: string };
-  const { gameId } = req.params;
-  const game = games.find((game) => game.id === gameId);
-  if (!game) return res.status(404).send({ data: null, message: `Game not found with id ${gameId}` });
-  let player = game.currentPlayer === game.player1.id ? game.player1 : game.player2;
-  if (game.currentPlayer === game.player1.id) {
+  const { playerId } = req.body as { playerId: string };
+
+  if (game.currentPlayer !== playerId) return res.status(400).send({ data: null, message: "It's not your turn now ❌" });
+
+  const player = game.player1.id === playerId ? game.player1 : game.player2;
+
+  const dice = generateDice();
+
+  if (dice === 1) {
+    game.player1.currentScore = 0;
     game.currentPlayer = game.player2.id;
-  } else if (game.currentPlayer === game.player1.id) {
-    game.currentPlayer += game.player1.id;
+
+    return res.send({ data: { dice, game }, message: "Bad luck 🤪" });
   }
 
-  res.send({ data: player, message: mes });
-}); // { data: single game({}), message: null }
+  player.currentScore += dice;
+  res.send({ data: { dice, game }, message: null });
+});
 
-router.put("/reset/:gameId", (req, res) => {
+router.post("/hold/:gameId", (req, res) => {}); // { data: single game({}), message: null }
+
+router.get("/reset/:gameId", (req, res) => {
   const { gameId } = req.params;
-  let game = games.find((game) => game.id === gameId);
+  const game = games[gameId];
+  if (!game) return res.status(404).send({ data: null, message: `Game not found with id: ${gameId} 🥺` });
 
-  if (game === undefined) return res.status(404).send({ data: null, message: `Game not found with id ${gameId}` });
-  game = {
+  games[gameId] = {
     ...game,
-    winner: null,
     player1: {
       ...game.player1,
       currentScore: 0,
@@ -110,21 +87,23 @@ router.put("/reset/:gameId", (req, res) => {
       currentScore: 0,
       totalScore: 0
     },
+    winner: null,
     currentPlayer: game.player1.id
   };
-  game.currentPlayer = game.player1.id;
 
-  res.send({ data: game, message: "Game successfully restarted 🔁" });
-}); // { data: single game({}), message: "Game successfully restarted 🔁" }
+  res.send({ data: games[gameId], message: "Game successfully restarted 🔁" });
+});
 
+//DELETE
 router.delete("/:gameId", (req, res) => {
   const { gameId } = req.params;
 
-  const gameIdx = games.findIndex((game) => game.id === gameId);
-  if (gameIdx === -1) return res.status(404).send({ data: null, message: `Game not found with id ${gameId}` });
+  const game = games[gameId];
+  if (!game) return res.status(404).send({ data: null, message: `Game not found with id: ${gameId} 🥺` });
 
-  const [deletedGame] = games.splice(gameIdx, 1);
-  res.send({ data: deletedGame, message: "Game successfully deleted 🗑️" });
-}); // { data: deleted game({}), message: "Game successfully deleted 🗑️" }
+  delete games[gameId];
+
+  res.send({ data: game, message: "Game successfully deleted" });
+});
 
 export default router;
